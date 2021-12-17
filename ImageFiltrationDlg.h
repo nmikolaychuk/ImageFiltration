@@ -1,8 +1,33 @@
-﻿
-// ImageFiltrationDlg.h: файл заголовка
-//
+﻿#pragma once
+#include <vector>
+using namespace std;
 
-#pragma once
+
+class Pixel {
+public:
+	double value;
+	int color;
+
+	/**
+	Конструктор по умолчанию.
+	*/
+	Pixel();
+
+	/**
+	Конструктор с параметром.
+	@param in_value: Значение пикселя.
+	*/
+	Pixel(double in_value);
+
+	/**
+	Перевод значения пикселя в цвет.
+	@param min_value: Минимальное значение пикселя в изображении.
+	@param max_value: Максимальное значение пикселя в изображении.
+	@return Значение цвета [0-255].
+	*/
+	int get_color_from_value(double min_value, double max_value);
+};
+
 
 
 // Диалоговое окно CImageFiltrationDlg
@@ -30,4 +55,88 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+public:
+
+	//////////////////////////////
+	/// Переменные
+	//////////////////////////////
+
+	CEdit EDIT_CONTROL_FIRST_AMPL;
+	CEdit EDIT_CONTROL_SECOND_AMPL;
+	CEdit EDIT_CONTROL_THIRD_AMPL;
+	CEdit EDIT_CONTROL_FIRST_X_SHIFT;
+	CEdit EDIT_CONTROL_SECOND_X_SHIFT;
+	CEdit EDIT_CONTROL_THIRD_X_SHIFT;
+	CEdit EDIT_CONTROL_FIRST_Y_SHIFT;
+	CEdit EDIT_CONTROL_SECOND_Y_SHIFT;
+	CEdit EDIT_CONTROL_THIRD_Y_SHIFT;
+	CEdit EDIT_CONTROL_FIRST_X_DISP;
+	CEdit EDIT_CONTROL_SECOND_X_DISP;
+	CEdit EDIT_CONTROL_THIRD_X_DISP;
+	CEdit EDIT_CONTROL_FIRST_Y_DISP;
+	CEdit EDIT_CONTROL_SECOND_Y_DISP;
+	CEdit EDIT_CONTROL_THIRD_Y_DISP;
+	CEdit EDIT_IMAGE_PATH;
+	CButton CHECK_FIRST_GAUSS;
+	CButton CHECK_SECOND_GAUSS;
+	CButton CHECK_THIRD_GAUSS;
+	CButton RADIO_LINEAR_FILTER;
+	CButton RADIO_MEDIAN_FILTER;
+	double EDIT_FIRST_AMPL;
+	double EDIT_SECOND_AMPL;
+	double EDIT_THIRD_AMPL;
+	double EDIT_FIRST_X_SHIFT;
+	double EDIT_SECOND_X_SHIFT;
+	double EDIT_THIRD_X_SHIFT;
+	double EDIT_FIRST_Y_SHIFT;
+	double EDIT_SECOND_Y_SHIFT;
+	double EDIT_THIRD_Y_SHIFT;
+	double EDIT_FIRST_X_DISP;
+	double EDIT_SECOND_X_DISP;
+	double EDIT_THIRD_X_DISP;
+	double EDIT_FIRST_Y_DISP;
+	double EDIT_SECOND_Y_DISP;
+	double EDIT_THIRD_Y_DISP;
+	double EDIT_FILTRATION_CRITERION;
+	int EDIT_IMAGE_HEIGHT;
+	int EDIT_IMAGE_WIDTH;
+	int EDIT_KERNEL_SIZE;
+	
+	// Переменные, связываемые с окном исходного изображения.
+	CWnd* InputWnd;
+	CDC* InputDc;
+	CRect Input;
+	double input_xmin, input_xmax, input_ymin, input_ymax, input_xp, input_yp;
+	
+	//////////////////////////////
+	/// Глобальные переменные
+	//////////////////////////////
+	
+	CImage image;
+	vector<vector<Pixel>> input_image;
+	vector<vector<Pixel>> veil_image;
+	vector<vector<Pixel>> corrupt_image;
+	vector<vector<Pixel>> filtered_image;
+
+	//////////////////////////////
+	/// Функции
+	//////////////////////////////
+	void draw_image(vector<vector<Pixel>>, CWnd* wnd, CDC* dc, CRect rect);
+
+	//////////////////////////////
+	/// Обработчики нажатий
+	//////////////////////////////
+
+	afx_msg void OnBnClickedButtonDrawImage();
+	afx_msg void OnBnClickedButtonClearImage();
+	afx_msg void OnBnClickedButtonDrawFilter();
+	afx_msg void OnBnClickedButtonClearFilter();
+	afx_msg void OnBnClickedButtonDrawVeil();
+	afx_msg void OnBnClickedButtonClearVeil();
+	afx_msg void OnBnClickedButtonDrawCorrupt();
+	afx_msg void OnBnClickedButtonClearCorrupt();
+	afx_msg void OnBnClickedCheckFirstGauss();
+	afx_msg void OnBnClickedCheckSecondGauss();
+	afx_msg void OnBnClickedCheckThirdGauss();
+	afx_msg void OnBnClickedButtonLoadImage();
 };
