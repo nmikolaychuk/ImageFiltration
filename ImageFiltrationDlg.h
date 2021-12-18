@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include <vector>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui_c.h>
 using namespace std;
+using namespace cv;
 
 
 class Pixel {
@@ -107,6 +110,24 @@ public:
 	CDC* InputDc;
 	CRect Input;
 	double input_xmin, input_xmax, input_ymin, input_ymax, input_xp, input_yp;
+
+	// Переменные, связываемые с окном для отображения вуали.
+	CWnd* VeilWnd;
+	CDC* VeilDc;
+	CRect Veil;
+	double veil_xmin, veil_xmax, veil_ymin, veil_ymax, veil_xp, veil_yp;
+
+	// Переменные, связываемые с окном для отображения искаженного изображения.
+	CWnd* CorruptWnd;
+	CDC* CorruptDc;
+	CRect Corrupt;
+	double corrupt_xmin, corrupt_xmax, corrupt_ymin, corrupt_ymax, corrupt_xp, corrupt_yp;
+
+	// Переменные, связываемые с окном для отображения отфильтрованного изображения.
+	CWnd* FilterWnd;
+	CDC* FilterDc;
+	CRect Filter;
+	double filter_xmin, filter_xmax, filter_ymin, filter_ymax, filter_xp, filter_yp;
 	
 	//////////////////////////////
 	/// Глобальные переменные
@@ -121,7 +142,8 @@ public:
 	//////////////////////////////
 	/// Функции
 	//////////////////////////////
-	void draw_image(vector<vector<Pixel>>, CWnd* wnd, CDC* dc, CRect rect);
+	void draw_image(vector<vector<Pixel>> image, CWnd* wnd, CDC* dc, CRect rect, string image_name);
+	vector<vector<Pixel>> calculate_color_of_image(vector<vector<Pixel>> image_vec);
 
 	//////////////////////////////
 	/// Обработчики нажатий
