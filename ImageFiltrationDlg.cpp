@@ -20,25 +20,26 @@ using namespace cv;
 #define VEIL_TRANSFORM(x,y) (veil_xp*((x)-veil_xmin)),(veil_yp*((y)-veil_ymax))
 #define CORRUPT_TRANSFORM(x,y) (corrupt_xp*((x)-corrupt_xmin)),(corrupt_yp*((y)-corrupt_ymax))
 #define FILTER_TRANSFORM(x,y) (filter_xp*((x)-filter_xmin)),(filter_yp*((y)-filter_ymax))
+#define VEIL_RATING_TRANSFORM(x,y) (veil_rating_xp*((x)-veil_rating_xmin)),(veil_rating_yp*((y)-veil_rating_ymax))
 
 
 CImageFiltrationDlg::CImageFiltrationDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_IMAGEFILTRATION_DIALOG, pParent)
-	, EDIT_FIRST_AMPL(1)
-	, EDIT_SECOND_AMPL(1)
-	, EDIT_THIRD_AMPL(1)
+	, EDIT_FIRST_AMPL(151)
+	, EDIT_SECOND_AMPL(151)
+	, EDIT_THIRD_AMPL(151)
 	, EDIT_FIRST_X_SHIFT(30)
 	, EDIT_SECOND_X_SHIFT(480)
 	, EDIT_THIRD_X_SHIFT(400)
 	, EDIT_FIRST_Y_SHIFT(300)
 	, EDIT_SECOND_Y_SHIFT(480)
 	, EDIT_THIRD_Y_SHIFT(30)
-	, EDIT_FIRST_X_DISP(120)
-	, EDIT_SECOND_X_DISP(160)
-	, EDIT_THIRD_X_DISP(170)
-	, EDIT_FIRST_Y_DISP(120)
-	, EDIT_SECOND_Y_DISP(160)
-	, EDIT_THIRD_Y_DISP(170)
+	, EDIT_FIRST_X_DISP(125)
+	, EDIT_SECOND_X_DISP(125)
+	, EDIT_THIRD_X_DISP(125)
+	, EDIT_FIRST_Y_DISP(125)
+	, EDIT_SECOND_Y_DISP(125)
+	, EDIT_THIRD_Y_DISP(125)
 	, EDIT_IMAGE_HEIGHT(0)
 	, EDIT_IMAGE_WIDTH(0)
 	, EDIT_KERNEL_SIZE(3)
@@ -144,6 +145,10 @@ BOOL CImageFiltrationDlg::OnInitDialog()
 	FilterDc = FilterWnd->GetDC();
 	FilterWnd->GetClientRect(&Filter);
 
+	VeilRatingWnd = GetDlgItem(IDC_PICTURE_VEIL_RATING);
+	VeilRatingDc = VeilRatingWnd->GetDC();
+	VeilRatingWnd->GetClientRect(&VeilRating);
+
 	// Обновление данных из интерфейса.
 	UpdateData(TRUE);
 
@@ -182,6 +187,7 @@ void CImageFiltrationDlg::OnPaint()
 		draw_image(veil_image, VeilWnd, VeilDc, Veil, "veil");
 		draw_image(corrupt_image, CorruptWnd, CorruptDc, Corrupt, "corrupt");
 		draw_image(filtered_image, FilterWnd, FilterDc, Filter, "filter");
+		draw_image(veil_rating_image, VeilRatingWnd, VeilRatingDc, VeilRating, "veil-rating");
 	}
 }
 
@@ -253,6 +259,12 @@ void CImageFiltrationDlg::draw_image(vector<vector<Pixel>> image, CWnd* wnd, CDC
 		filter_ymin = ymin;
 		filter_ymax = ymax;
 	}
+	else if (image_name == "veil-rating") {
+		veil_rating_xmin = xmin;
+		veil_rating_xmax = xmax;
+		veil_rating_ymin = ymin;
+		veil_rating_ymax = ymax;
+	}
 	else {
 		return;
 	}
@@ -281,6 +293,10 @@ void CImageFiltrationDlg::draw_image(vector<vector<Pixel>> image, CWnd* wnd, CDC
 		filter_xp = (window_signal_width / (filter_xmax - filter_xmin));
 		filter_yp = -(window_signal_height / (filter_ymax - filter_ymin));
 	}
+	else if (image_name == "veil-rating") {
+		veil_rating_xp = (window_signal_width / (veil_rating_xmax - veil_rating_xmin));
+		veil_rating_yp = -(window_signal_height / (veil_rating_ymax - veil_rating_ymin));
+	}
 
 	bmp.CreateCompatibleBitmap(dc, window_signal_width, window_signal_height);
 	CBitmap* pBmp = (CBitmap*)MemDc->SelectObject(&bmp);
@@ -291,8 +307,11 @@ void CImageFiltrationDlg::draw_image(vector<vector<Pixel>> image, CWnd* wnd, CDC
 			for (int j = 0; j < image[i].size(); j++) {
 				// Получение цвета.
 				COLORREF color;
-				if (image[i][j].color > 255) {
+				if (image[i][j].color >= 255) {
 					color = RGB(255, 255, 255);
+				}
+				else if (image[i][j].color <= 0) {
+					color = RGB(0, 0, 0);
 				}
 				else {
 					color = RGB(image[i][j].color, image[i][j].color, image[i][j].color);
@@ -390,6 +409,25 @@ void CImageFiltrationDlg::draw_image(vector<vector<Pixel>> image, CWnd* wnd, CDC
 			MemDc->MoveTo(FILTER_TRANSFORM(filter_xmax, filter_ymin + 0.001 * filter_ymax));
 			MemDc->LineTo(FILTER_TRANSFORM(filter_xmin, filter_ymin + 0.001 * filter_ymax));
 		}
+		else if (image_name == "veil-rating") {
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymin));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmax, veil_rating_ymax));
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymax));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmax, veil_rating_ymin));
+
+			// Граница.
+			pen.DeleteObject();
+			pen.CreatePen(PS_SOLID, -1, RGB(0, 0, 0));
+			MemDc->SelectObject(&pen);
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymin));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymax));
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymax));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmax, veil_rating_ymax));
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmax - 0.001 * veil_rating_xmax, veil_rating_ymax));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmax - 0.001 * veil_rating_xmax, veil_rating_ymin));
+			MemDc->MoveTo(VEIL_RATING_TRANSFORM(veil_rating_xmax, veil_rating_ymin + 0.001 * veil_rating_ymax));
+			MemDc->LineTo(VEIL_RATING_TRANSFORM(veil_rating_xmin, veil_rating_ymin + 0.001 * veil_rating_ymax));
+		}
 	}
 
 	// Заполнение буфера.
@@ -483,15 +521,22 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 	}
 	else {
 		// Получение Mat из corrupt_image.
-		Mat gray(corrupt_image.size(), corrupt_image[0].size(), CV_8UC1, Scalar(255));
+		Mat corrupt(corrupt_image.size(), corrupt_image[0].size(), CV_8UC1, Scalar(255));
 		Mat input(input_image.size(), input_image[0].size(), CV_8UC1, Scalar(255));
 
-		for (int y = 0; y < gray.rows; y++)
+		for (int y = 0; y < corrupt.rows; y++)
 		{
-			for (int x = 0; x < gray.cols; x++)
+			for (int x = 0; x < corrupt.cols; x++)
 			{
-				gray.at<uchar>(y, x) = (int)corrupt_image[gray.rows - 1 - y][x].color;
-				input.at<uchar>(y, x) = (int)input_image[input.rows - 1 - y][x].color;
+				int corrupt_color = (int)corrupt_image[corrupt.rows - 1 - y][x].color;
+				if (corrupt_color > 255) corrupt_color = 255;
+				if (corrupt_color < 0) corrupt_color = 0;
+				corrupt.at<uchar>(y, x) = corrupt_color;
+
+				int input_color = (int)input_image[input.rows - 1 - y][x].color;
+				if (input_color > 255) input_color = 255;
+				if (input_color < 0) input_color = 0;
+				input.at<uchar>(y, x) = input_color;
 			}
 		}
 
@@ -501,24 +546,62 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 		}
 		else {
 			// Выбор фильтра.
-			Mat result;
+			Mat veil_rating;
 			if (RADIO_LINEAR_FILTER.GetCheck() == BST_CHECKED) {
-				blur(gray, result, Size(EDIT_KERNEL_SIZE, EDIT_KERNEL_SIZE), Point(-1, -1), BORDER_CONSTANT);
+				blur(corrupt, veil_rating, Size(EDIT_KERNEL_SIZE, EDIT_KERNEL_SIZE), Point(-1, -1), BORDER_REPLICATE);
 			}
 			else if (RADIO_MEDIAN_FILTER.GetCheck() == BST_CHECKED) {
-				medianBlur(gray, result, EDIT_KERNEL_SIZE);
+				medianBlur(corrupt, veil_rating, EDIT_KERNEL_SIZE);
 			}
 
-			// Вычитание отифльтрованного из зашумленного.
-			Mat filtered = gray;
-			double c = 0.89;
-			for (int i = 0; i < gray.rows; i++) {
-				for (int j = 0; j < gray.cols; j++) {
-					filtered.at<uchar>(i, j) = c * gray.at<uchar>(i, j) - (1. - c) * result.at<uchar>(i, j);
+			veil_rating_image.clear();
+			filtered_image.clear();
+			veil_rating_image.resize(veil_rating.rows);
+			filtered_image.resize(veil_rating.rows);
+			for (int i = 0; i < veil_rating.rows; i++) {
+				veil_rating_image[i].resize(veil_rating.cols);
+				filtered_image[i].resize(veil_rating.cols);
+			}
+
+			// Mat -> vector<vector<Pixel>>.
+			for (int y = 0; y < veil_rating.rows; y++)
+			{
+				for (int x = 0; x < veil_rating.cols; x++)
+				{
+					veil_rating_image[veil_rating.rows - 1 - y][x].value = (double)veil_rating.at<uchar>(y, x);
+				}
+			}
+			veil_rating_image = calculate_color_of_image(veil_rating_image);
+
+			// Удаление вуали.
+			double c = 0.65;
+			for (int i = 0; i < corrupt_image.size(); i++) {
+				for (int j = 0; j < corrupt_image[i].size(); j++)
+					filtered_image[i][j].value = c * corrupt_image[i][j].value - (1.-c) * veil_rating_image[i][j].value;
+			}
+			filtered_image = calculate_color_of_image(filtered_image);
+
+			// Вычисление критерия (градиентный).
+			// Получение Mat из corrupt_image.
+			Mat fil(filtered_image.size(), filtered_image[0].size(), CV_8UC1, Scalar(255));
+			Mat def(input_image.size(), input_image[0].size(), CV_8UC1, Scalar(255));
+
+			for (int y = 0; y < def.rows; y++)
+			{
+				for (int x = 0; x < def.cols; x++)
+				{
+					int def_color = (int)input_image[def.rows - 1 - y][x].color;
+					if (def_color > 255) def_color = 255;
+					if (def_color < 0) def_color = 0;
+					def.at<uchar>(y, x) = def_color;
+
+					int fil_color = (int)filtered_image[fil.rows - 1 - y][x].color;
+					if (fil_color > 255) fil_color = 255;
+					if (fil_color < 0) fil_color = 0;
+					fil.at<uchar>(y, x) = fil_color;
 				}
 			}
 
-			// Вычисление критерия (градиентный).
 			float sobel_x[9] = { -1, -2, -1,
 								0, 0, 0,
 								1, 2, 1 };
@@ -531,10 +614,10 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 			Mat grad_input_x, grad_input_y;
 			Mat grad_filter_x, grad_filter_y;
 			// Вычисления градиентов исходного и отфильтрованного изображения.
-			filter2D(input, grad_input_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(input, grad_input_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(filtered, grad_filter_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(filtered, grad_filter_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(def, grad_input_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(def, grad_input_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(fil, grad_filter_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(fil, grad_filter_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
 
 			// Получение яркости.
 			Mat grad_input(input_image.size(), input_image[0].size(), CV_8UC1, Scalar(255));
@@ -560,27 +643,10 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 			}
 			EDIT_FILTRATION_CRITERION = upper / lower;
 			UpdateData(FALSE);
-
-			filtered_image.clear();
-			filtered_image.resize(filtered.rows);
-			for (int i = 0; i < filtered.rows; i++) {
-				filtered_image[i].resize(filtered.cols);
-			}
-
-			// Mat -> vector<vector<Pixel>>.
-			for (int y = 0; y < filtered.rows; y++)
-			{
-				for (int x = 0; x < filtered.cols; x++)
-				{
-					filtered_image[filtered.rows - 1 - y][x].color = (double)filtered.at<uchar>(y, x);
-					filtered_image[filtered.rows - 1 - y][x].value = filtered_image[filtered.rows - 1 - y][x].color;
-				}
-			}
-
-			filtered_image = calculate_color_of_image(filtered_image);
 		}
 	}
 
+	draw_image(veil_rating_image, VeilRatingWnd, VeilRatingDc, VeilRating, "veil-rating");
 	draw_image(filtered_image, FilterWnd, FilterDc, Filter, "filter");
 }
 
@@ -592,6 +658,7 @@ void CImageFiltrationDlg::OnBnClickedButtonClearFilter()
 
 	// Перерисовка.
 	draw_image(filtered_image, FilterWnd, FilterDc, Filter, "filter");
+	draw_image(veil_rating_image, VeilRatingWnd, VeilRatingDc, VeilRating, "veil-rating");
 }
 
 
@@ -648,7 +715,8 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawVeil()
 					signal += amplitude[i] * exp(-(exp_expression_first + exp_expression_second) / (2. * sigma_x[i] * sigma_y[i]));
 				}
 
-				Pixel pix(signal);
+				Pixel pix;
+				pix.value = signal;
 				row.push_back(pix);
 			}
 			veil_image.push_back(row);
@@ -702,7 +770,7 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawCorrupt()
 
 			for (int i = 0; i < input_image.size(); i++) {
 				for (int j = 0; j < input_image[i].size(); j++) {
-					corrupt_image[i][j] = input_image[i][j].value * (veil_image[i][j].color/255.);
+					corrupt_image[i][j] = input_image[i][j].value + veil_image[i][j].value;
 				}
 			}
 

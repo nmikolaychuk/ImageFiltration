@@ -33,7 +33,8 @@
 #define IDC_PICTURE_VEIL                1036
 #define IDC_PICTURE_CORRUPT             1037
 #define IDC_PICTURE_FILTER              1038
-#define IDC_COMBO1                      1040
+#define IDC_PICTURE_                    1039
+#define IDC_PICTURE_VEIL_RATING         1039
 #define IDC_EDIT_FIRST_Y_SHIFT          1045
 #define IDC_EDIT_SECOND_X_SHIFT         1046
 #define IDC_EDIT_SECOND_Y_SHIFT         1047

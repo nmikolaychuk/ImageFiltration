@@ -128,6 +128,12 @@ public:
 	CDC* FilterDc;
 	CRect Filter;
 	double filter_xmin, filter_xmax, filter_ymin, filter_ymax, filter_xp, filter_yp;
+
+	// Переменные, связываемые с окном для отображения оценки вуали.
+	CWnd* VeilRatingWnd;
+	CDC* VeilRatingDc;
+	CRect VeilRating;
+	double veil_rating_xmin, veil_rating_xmax, veil_rating_ymin, veil_rating_ymax, veil_rating_xp, veil_rating_yp;
 	
 	//////////////////////////////
 	/// Глобальные переменные
@@ -138,6 +144,7 @@ public:
 	vector<vector<Pixel>> veil_image;
 	vector<vector<Pixel>> corrupt_image;
 	vector<vector<Pixel>> filtered_image;
+	vector<vector<Pixel>> veil_rating_image;
 
 	//////////////////////////////
 	/// Функции
