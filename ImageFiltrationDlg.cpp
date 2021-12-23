@@ -25,20 +25,20 @@ using namespace cv;
 CImageFiltrationDlg::CImageFiltrationDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_IMAGEFILTRATION_DIALOG, pParent)
 	, EDIT_FIRST_AMPL(1)
-	, EDIT_SECOND_AMPL(2)
-	, EDIT_THIRD_AMPL(3)
+	, EDIT_SECOND_AMPL(1)
+	, EDIT_THIRD_AMPL(1)
 	, EDIT_FIRST_X_SHIFT(30)
 	, EDIT_SECOND_X_SHIFT(480)
 	, EDIT_THIRD_X_SHIFT(400)
-	, EDIT_FIRST_Y_SHIFT(150)
+	, EDIT_FIRST_Y_SHIFT(300)
 	, EDIT_SECOND_Y_SHIFT(480)
-	, EDIT_THIRD_Y_SHIFT(150)
+	, EDIT_THIRD_Y_SHIFT(30)
 	, EDIT_FIRST_X_DISP(120)
 	, EDIT_SECOND_X_DISP(160)
-	, EDIT_THIRD_X_DISP(80)
+	, EDIT_THIRD_X_DISP(170)
 	, EDIT_FIRST_Y_DISP(120)
 	, EDIT_SECOND_Y_DISP(160)
-	, EDIT_THIRD_Y_DISP(80)
+	, EDIT_THIRD_Y_DISP(170)
 	, EDIT_IMAGE_HEIGHT(0)
 	, EDIT_IMAGE_WIDTH(0)
 	, EDIT_KERNEL_SIZE(3)
@@ -503,10 +503,19 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 			// Выбор фильтра.
 			Mat result;
 			if (RADIO_LINEAR_FILTER.GetCheck() == BST_CHECKED) {
-				GaussianBlur(gray, result, Size(EDIT_KERNEL_SIZE, EDIT_KERNEL_SIZE), 0);
+				blur(gray, result, Size(EDIT_KERNEL_SIZE, EDIT_KERNEL_SIZE), Point(-1, -1), BORDER_CONSTANT);
 			}
 			else if (RADIO_MEDIAN_FILTER.GetCheck() == BST_CHECKED) {
 				medianBlur(gray, result, EDIT_KERNEL_SIZE);
+			}
+
+			// Вычитание отифльтрованного из зашумленного.
+			Mat filtered = gray;
+			double c = 0.89;
+			for (int i = 0; i < gray.rows; i++) {
+				for (int j = 0; j < gray.cols; j++) {
+					filtered.at<uchar>(i, j) = c * gray.at<uchar>(i, j) - (1. - c) * result.at<uchar>(i, j);
+				}
 			}
 
 			// Вычисление критерия (градиентный).
@@ -522,10 +531,10 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 			Mat grad_input_x, grad_input_y;
 			Mat grad_filter_x, grad_filter_y;
 			// Вычисления градиентов исходного и отфильтрованного изображения.
-			filter2D(result, grad_input_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(result, grad_input_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(input, grad_filter_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
-			filter2D(input, grad_filter_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(input, grad_input_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(input, grad_input_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(filtered, grad_filter_x, -1, sobel_filter_x, Point(-1, -1), 0, cv::BORDER_DEFAULT);
+			filter2D(filtered, grad_filter_y, -1, sobel_filter_y, Point(-1, -1), 0, cv::BORDER_DEFAULT);
 
 			// Получение яркости.
 			Mat grad_input(input_image.size(), input_image[0].size(), CV_8UC1, Scalar(255));
@@ -553,18 +562,18 @@ void CImageFiltrationDlg::OnBnClickedButtonDrawFilter()
 			UpdateData(FALSE);
 
 			filtered_image.clear();
-			filtered_image.resize(result.rows);
-			for (int i = 0; i < result.rows; i++) {
-				filtered_image[i].resize(result.cols);
+			filtered_image.resize(filtered.rows);
+			for (int i = 0; i < filtered.rows; i++) {
+				filtered_image[i].resize(filtered.cols);
 			}
 
 			// Mat -> vector<vector<Pixel>>.
-			for (int y = 0; y < result.rows; y++)
+			for (int y = 0; y < filtered.rows; y++)
 			{
-				for (int x = 0; x < result.cols; x++)
+				for (int x = 0; x < filtered.cols; x++)
 				{
-					filtered_image[result.rows - 1 - y][x].color = (double)result.at<uchar>(y, x);
-					filtered_image[result.rows - 1 - y][x].value = filtered_image[result.rows - 1 - y][x].color;
+					filtered_image[filtered.rows - 1 - y][x].color = (double)filtered.at<uchar>(y, x);
+					filtered_image[filtered.rows - 1 - y][x].value = filtered_image[filtered.rows - 1 - y][x].color;
 				}
 			}
 
